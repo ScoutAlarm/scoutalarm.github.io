@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://ScoutAlarm.github.io/sitemap.xml 
