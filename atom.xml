@@ -4,7 +4,7 @@
   <title><![CDATA[Scout Alarm Engineering]]></title>
   <link href="http://ScoutAlarm.github.io/atom.xml" rel="self"/>
   <link href="http://ScoutAlarm.github.io/"/>
-  <updated>2013-12-29T17:42:29-06:00</updated>
+  <updated>2013-12-29T18:35:11-06:00</updated>
   <id>http://ScoutAlarm.github.io/</id>
   <author>
     <name><![CDATA[Scout Alarm]]></name>
@@ -22,19 +22,19 @@
 
 <p>Disclaimer, This is my first encounter with hardware devices that communicate with the internet (IoT, internet of things).</p>
 
-<p>A short background story, as we are developing the internal infrastructure for Scout, I began writing a web-service that would be a gateway for our devices to communicate with our ecosystem. Naively I created a RESTful api (btw if anyone is looking for a web-service DSL I seriously suggest looking at <a href="https://github.com/mattetti/Weasel-Diesel">https://github.com/mattetti/Weasel-Diesel</a>). I defined some resources and got as far as establishing all the important information we need to capture.</p>
+<p>A short background story, currently we are developing the internal infrastructure for Scout, a few weeks ago I began writing a web-service that would be a gateway for our hardware devices to communicate with our ecosystem. Naively I created a RESTful api using my favorite web-service DSL (<a href="https://github.com/mattetti/Weasel-Diesel">https://github.com/mattetti/Weasel-Diesel</a>). I defined some resources and got as far as establishing all the important information we needed to capture.</p>
 
 <p>Tangent, data transfer is not a big consideration when developing for the web. For mobile, developers get a little bit more conscious but as long as you are sending only the data you need and using JSON, further optimization isn’t worth the effort (imho). The reason behind this is that technology has advancement so much, servers have gotten so powerful and cheap that protocol overhead and payload management isn&rsquo;t relevant like it used to be when the internet infrastructure was in its infancy.</p>
 
-<p>Back to the story, With the following knowledge there was almost no reason for me to think about data transfer and how resources intensive protocols like HTTP are. Why would I, I have never seen a webserver choke when trying to process an http request.</p>
+<p>Back to the story, With the following knowledge there was almost no reason for me to think about data transfer and how resources intensive protocols like HTTP are. Why would I, I have never seen a webserver or client choke when trying to process an http request/ response.</p>
 
-<p>Another Tangent, enter Internet of Things (iot), billions of small devices with sensors that are going to take over our lives. Most of these sensors are simple in implementation and are battery powered which gives them mobility to be anywhere and everywhere. Well here comes the fun part, all these battery powered devices are not going to come loaded with the latest and greatest in server technology. Imagine a scenario where someone loads RC car with a cinder block and expecting to run circles around your dog, not gonna happen. As such these devices have a microcontroller that is just powerful enough to do its task at the same time enabling the device to operate for as long as possible in remote locations on battery. Some may say this isn’t anything new, sensors have been in the field talking over RF forever and what I am talking about is nothing new. First, nothing about that statement is incorrect, 2) Fcuk RF, that so 1990&rsquo;s, I am talking about mesh protocols that are vastly superior to its RF counter part (the benefits are so great it deserves its own post).</p>
+<p>Another Tangent, enter Internet of Things (iot), billions of small devices with sensors that are going to take over our lives. Most of these sensors are simple in implementation and are battery powered which gives them the mobility to be anywhere and everywhere. Here comes the fun part, all these battery powered devices are not going to come loaded with the latest and greatest in client-server technology. Imagine a scenario where someone loads an RC car with a cinder block and expects it to run circles around their dog, not gonna happen. As such these devices have microcontrollers that are just powerful enough to do their tasks and at the same time enabling the device to operate for as long as possible in remote locations on battery.</p>
 
-<p>Circling back, again, to the story, if we continued down the HTTP path our device would literally be maxing out their resource doing string manipulation and building http requests and parsing JSON responses. Imagine that, we are in the middle of a hardware revolution, and we cant even use strings&hellip; Scout also has the ability to operate over GSM and the more data that is sent over the wire the more the costs dig into our margins. So the incentives aligned to find a lower level protocol to communicate over.</p>
+<p>Circling back, again, to the story, if we continued down the HTTP path our device would literally be maxing out their resources doing string manipulation, building http requests and parsing JSON responses. Imagine that, we are in the middle of a hardware revolution, and we cant even use strings&hellip; Scout also has the ability to operate over GSM so the more data that we send over the wire the more we dig into our margins. So the incentives aligned to find a lower level protocol to communicate over.</p>
 
-<p>The solution, TCP/IP + binary. Lets let that soak in a little. I haven’t touched binary in years and if there was ever a case where I needed to read a file through a stream, the binary piece is so abstracted that it&rsquo;s a black box for most young developers.</p>
+<p>The solution, TCP/IP + binary. Lets let that soak in a little. I haven’t touched binary in years and if there was ever a case where I needed to read a file through a stream, the binary piece is so abstracted that it&rsquo;s a black box for most developers.</p>
 
-<p>The hunt for a binary server began. Most production tested frameworks that I like/ have worked with don’t have great solution for handling TCP/IP. Sure ruby has a built in TCPSocketServer, but I don’t want to have to write a server framework from scratch&hellip;</p>
+<p>The hunt for a binary server began. Most production tested frameworks that I like/ have worked with (sinatra, padrino, rails) don’t have great solution for handling TCP/IP. Sure ruby has a built in TCPSocketServer, but I don’t want to have to write a server framework from scratch&hellip;</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -47,7 +47,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>After about three days of searching for a suitable ruby framework I decided to look at nodejs. I have never used it, but in my past life i dealt extensively in javascript client frameworks (backbone, angular, extjs, and dojo). Turns out, there is a great project called actionHero (<a href="https://github.com/evantahler/actionHero">https://github.com/evantahler/actionHero</a>). evantahler created an awesome solution that included the ability to define servers within a framework. And it just so happened that it included a json socket server out of the box&hellip; jackpot! (Finding this was a needle in a haystack situation). What was left was converting json input / output into binary opt codes + parameters. So I cloned the json scoket server, and redefined the parseRequest function and implemented a binaryActionRequestParser. The binaryActionRequestParser creates an object that acts in the same way the json socket server expects its data. This way i was able to throw the object at the server.processAction() and let it take care of the rest.</p>
+<p>After about three days of searching for a suitable ruby framework I decided to look at nodejs. I have never used it, but in my past life I dealt extensively in javascript client frameworks (backbone, angular, extjs, and dojo). Turns out, there is a great project called actionHero (<a href="https://github.com/evantahler/actionHero">https://github.com/evantahler/actionHero</a>). evantahler created an awesome solution that gives a developer the ability to define server types within a framework. And it just so happened that it included a json socket server out of the box&hellip; jackpot! (Finding this was a needle in a haystack situation). What was left was converting json input / output into binary opt codes + parameters. So I cloned the json scoket server, and redefined the parseRequest function (see below) and implemented a binaryActionRequestParser. The binaryActionRequestParser creates an object that acts in the same way the json socket server expects its data. This way I was able to throw the object at the server.processAction() and let it take care of the rest.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -74,62 +74,63 @@
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">api</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">binaryActionRequestParse</span> <span class="o">=</span> <span class="n">function</span><span class="p">(){</span>
+</span><span class='line'>  <span class="n">function</span> <span class="no">Parser</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">dissolve</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">this</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">this</span><span class="o">.</span><span class="n">loop</span><span class="p">(</span><span class="n">function</span><span class="p">(</span><span class="k">end</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">this</span><span class="o">.</span><span class="n">mcaction16</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="n">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">switch</span> <span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">vars</span><span class="o">.</span><span class="n">action</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">case</span> <span class="s1">&#39;signin&#39;</span><span class="p">:</span> <span class="n">this</span><span class="o">.</span><span class="n">uint32be</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">);</span> <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="k">case</span> <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="k">case</span> <span class="s1">&#39;updateFwVersion&#39;</span><span class="p">:</span> <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="p">})</span><span class="o">.</span><span class="n">tap</span><span class="p">(</span><span class="n">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">this</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">vars</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">this</span><span class="o">.</span><span class="n">vars</span> <span class="o">=</span> <span class="p">{};</span>
+</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">util</span><span class="o">.</span><span class="n">inherits</span><span class="p">(</span><span class="no">Parser</span><span class="p">,</span> <span class="n">dissolve</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="kp">new</span> <span class="no">Parser</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">var</span> <span class="n">parseRequest</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">connection</span><span class="p">){</span>
-</span><span class='line'>  <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;parsing request&quot;</span><span class="p">,</span> <span class="s1">&#39;debug&#39;</span><span class="p">);</span>
 </span><span class='line'>  <span class="n">parser</span> <span class="o">=</span> <span class="kp">new</span> <span class="n">api</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">binaryActionRequestParse</span><span class="p">();</span>
 </span><span class='line'>  <span class="n">parser</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s2">&quot;readable&quot;</span><span class="p">,</span> <span class="n">function</span><span class="p">()</span> <span class="p">{</span>
 </span><span class='line'>    <span class="n">var</span> <span class="n">e</span><span class="p">;</span>
 </span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">read</span><span class="p">())</span> <span class="p">{</span>
-</span><span class='line'>      <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;action: &quot;</span><span class="o">+</span><span class="no">JSON</span><span class="o">.</span><span class="n">stringify</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="s1">&#39;debug&#39;</span><span class="p">);</span>
-</span><span class='line'>      <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;checking action against built in verbs&quot;</span><span class="p">,</span> <span class="s1">&#39;debug&#39;</span><span class="p">);</span>
-</span><span class='line'>      <span class="n">connection</span><span class="o">.</span><span class="n">verbs</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">action</span><span class="p">,</span> <span class="o">[]</span><span class="p">,</span> <span class="n">function</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">data</span><span class="p">){</span>
-</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">error</span> <span class="o">==</span> <span class="n">null</span><span class="p">){</span>
-</span><span class='line'>          <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Found in built in verbs, data: &quot;</span><span class="o">+</span><span class="no">JSON</span><span class="o">.</span><span class="n">stringify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="s1">&#39;debug&#39;</span><span class="p">);</span>
-</span><span class='line'>          <span class="n">var</span> <span class="n">message</span> <span class="o">=</span> <span class="p">{</span><span class="ss">status</span><span class="p">:</span> <span class="s2">&quot;OK&quot;</span><span class="p">,</span> <span class="ss">context</span><span class="p">:</span> <span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="ss">data</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
-</span><span class='line'>          <span class="n">server</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">connection</span><span class="o">.</span><span class="n">params</span><span class="o">[</span><span class="s2">&quot;action&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">action</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">connection</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">e</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">connection</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">null</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">connection</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="p">{};</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="p">}</span><span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">error</span> <span class="o">===</span> <span class="s2">&quot;verb not found or not allowed&quot;</span><span class="p">){</span>
-</span><span class='line'>          <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Not found in built in verbs&quot;</span><span class="p">,</span> <span class="s1">&#39;debug&#39;</span><span class="p">);</span>
-</span><span class='line'>          <span class="n">try</span><span class="p">{</span> <span class="sr">//</span> <span class="n">check</span> <span class="k">for</span> <span class="ow">and</span> <span class="n">attempt</span> <span class="n">to</span> <span class="n">check</span> <span class="n">single</span><span class="o">-</span><span class="n">use</span> <span class="n">params</span>
-</span><span class='line'>            <span class="n">server</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;trying custom request action: &quot;</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">action</span><span class="p">,</span> <span class="s2">&quot;debug&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">action</span> <span class="o">!=</span> <span class="n">null</span><span class="p">){</span>
-</span><span class='line'>              <span class="n">connection</span><span class="o">.</span><span class="n">params</span><span class="o">[</span><span class="s2">&quot;action&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">action</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="n">connection</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">e</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="p">}</span><span class="kp">catch</span><span class="p">(</span><span class="n">e</span><span class="p">){</span>
-</span><span class='line'>            <span class="n">connection</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">action</span><span class="p">;</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="n">connection</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">null</span><span class="p">;</span>
-</span><span class='line'>          <span class="n">connection</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="p">{};</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="n">server</span><span class="o">.</span><span class="n">processAction</span><span class="p">(</span><span class="n">connection</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="p">}</span><span class="k">else</span><span class="p">{</span>
-</span><span class='line'>          <span class="n">server</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">api</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">binaryActionResponseSerialiser</span><span class="p">()</span><span class="o">.</span><span class="n">unknown_call</span><span class="p">());</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>      <span class="n">server</span><span class="o">.</span><span class="n">processAction</span><span class="p">(</span><span class="n">connection</span><span class="p">);</span>
 </span><span class='line'>    <span class="p">}</span>
 </span><span class='line'>  <span class="p">});</span>
 </span><span class='line'>
@@ -138,7 +139,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>ActionHero has proven to be an awesome tool for getting a binary server up and running, and it has been performing brilliantly. For parsing and producing binary data in node I used this repo (<a href="https://github.com/deoxxa/dissolve">https://github.com/deoxxa/dissolve</a>) and this repo (<a href="https://github.com/deoxxa/concentrate">https://github.com/deoxxa/concentrate</a>). Deoxxa, has great solution for working with binary data. It also gives you the ability to define your own patterns for consuming data if the built in functions aren&rsquo;t enough</p>
+<p>ActionHero has proven to be an awesome tool for getting a binary server up and running, and it has been performing brilliantly. For parsing and producing binary data in node I used this repo (<a href="https://github.com/deoxxa/dissolve">https://github.com/deoxxa/dissolve</a>) and this repo (<a href="https://github.com/deoxxa/concentrate">https://github.com/deoxxa/concentrate</a>). Deoxxa, has a great solution for working with binary data. It also gives you the ability to define your own patterns for consuming data if the built in functions aren&rsquo;t enough</p>
 
 <p>Chaining calls:</p>
 
@@ -154,7 +155,43 @@
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">uint8bool</span> <span class="o">=</span> <span class="kd">function</span> <span class="nx">uint8bool</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">mcstring16</span> <span class="o">=</span> <span class="kd">function</span> <span class="nx">string16</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">len</span> <span class="o">=</span> <span class="p">[</span><span class="nx">name</span><span class="p">,</span> <span class="s2">&quot;len&quot;</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">uint16be</span><span class="p">(</span><span class="nx">len</span><span class="p">).</span><span class="nx">tap</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">buffer</span><span class="p">(</span><span class="nx">name</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">len</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">).</span><span class="nx">tap</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">len</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">].</span><span class="nx">length</span><span class="o">/</span><span class="mi">2</span><span class="p">;</span><span class="o">++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">][</span><span class="nx">i</span><span class="o">*</span><span class="mi">2</span><span class="p">];</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">][</span><span class="nx">i</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">][</span><span class="nx">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">][</span><span class="nx">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">].</span><span class="nx">toString</span><span class="p">(</span><span class="s2">&quot;ucs2&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">uint8bool</span> <span class="o">=</span> <span class="kd">function</span> <span class="nx">uint8bool</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
 </span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">uint8be</span><span class="p">(</span><span class="nx">name</span><span class="p">).</span><span class="nx">tap</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
 </span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vars</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="kc">true</span> <span class="o">:</span> <span class="kc">false</span><span class="p">)</span>
 </span><span class='line'>  <span class="p">});</span>
@@ -162,9 +199,9 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Its incredible to think that with hardware taking such a big step forward in accessibility and implementation we (as developers) are forced to take steps back in communication protocols. I was a victim of trying to impose web standards in a field that is so vastly different. There is not this 1:1 correlation that I assumed/ wished there was. It&rsquo;s too early to tell, but I think the difference is for the best. We had to go back to basics and define a solution that works for the problem. It&rsquo;s like the saying goes; don&rsquo;t use an anvil when a hammer will do.</p>
+<p>Its incredible to think that with hardware taking such a big step forward in accessibility and implementation we (as developers) are forced to take steps back in communication protocols. I was a victim of trying to impose web standards in a field that is so vastly different. There is not this 1:1 correlation that I assumed/ wished there was. We had to go back to basics and build a solution that worked best for the problem. It&rsquo;s too early to tell, but I think the difference solution is for the best. It&rsquo;s like the saying goes; don&rsquo;t use an anvil when a hammer will do.</p>
 
-<p>It is an exciting time and it will be interesting to see if more frameworks will be developed on languages such as ruby, node, python that will help usher in the new hardware revolution.</p>
+<p>It is an exciting time and it will be very interesting to see what new frameworks will be developed on languages such as ruby, node, python that will help usher in the new hardware era.</p>
 ]]></content>
   </entry>
   

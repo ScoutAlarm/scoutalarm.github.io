@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ruby Nodejs Socket IoT | Scout Alarm Engineering]]></title>
   <link href="http://ScoutAlarm.github.io/blog/categories/ruby-nodejs-socket-iot/atom.xml" rel="self"/>
   <link href="http://ScoutAlarm.github.io/"/>
-  <updated>2013-12-29T17:42:29-06:00</updated>
+  <updated>2013-12-29T18:35:11-06:00</updated>
   <id>http://ScoutAlarm.github.io/</id>
   <author>
     <name><![CDATA[Scout Alarm]]></name>
@@ -22,19 +22,19 @@
 
 <p>Disclaimer, This is my first encounter with hardware devices that communicate with the internet (IoT, internet of things).</p>
 
-<p>A short background story, as we are developing the internal infrastructure for Scout, I began writing a web-service that would be a gateway for our devices to communicate with our ecosystem. Naively I created a RESTful api (btw if anyone is looking for a web-service DSL I seriously suggest looking at <a href="https://github.com/mattetti/Weasel-Diesel">https://github.com/mattetti/Weasel-Diesel</a>). I defined some resources and got as far as establishing all the important information we need to capture.</p>
+<p>A short background story, currently we are developing the internal infrastructure for Scout, a few weeks ago I began writing a web-service that would be a gateway for our hardware devices to communicate with our ecosystem. Naively I created a RESTful api using my favorite web-service DSL (<a href="https://github.com/mattetti/Weasel-Diesel">https://github.com/mattetti/Weasel-Diesel</a>). I defined some resources and got as far as establishing all the important information we needed to capture.</p>
 
 <p>Tangent, data transfer is not a big consideration when developing for the web. For mobile, developers get a little bit more conscious but as long as you are sending only the data you need and using JSON, further optimization isn’t worth the effort (imho). The reason behind this is that technology has advancement so much, servers have gotten so powerful and cheap that protocol overhead and payload management isn&rsquo;t relevant like it used to be when the internet infrastructure was in its infancy.</p>
 
-<p>Back to the story, With the following knowledge there was almost no reason for me to think about data transfer and how resources intensive protocols like HTTP are. Why would I, I have never seen a webserver choke when trying to process an http request.</p>
+<p>Back to the story, With the following knowledge there was almost no reason for me to think about data transfer and how resources intensive protocols like HTTP are. Why would I, I have never seen a webserver or client choke when trying to process an http request/ response.</p>
 
-<p>Another Tangent, enter Internet of Things (iot), billions of small devices with sensors that are going to take over our lives. Most of these sensors are simple in implementation and are battery powered which gives them mobility to be anywhere and everywhere. Well here comes the fun part, all these battery powered devices are not going to come loaded with the latest and greatest in server technology. Imagine a scenario where someone loads RC car with a cinder block and expecting to run circles around your dog, not gonna happen. As such these devices have a microcontroller that is just powerful enough to do its task at the same time enabling the device to operate for as long as possible in remote locations on battery. Some may say this isn’t anything new, sensors have been in the field talking over RF forever and what I am talking about is nothing new. First, nothing about that statement is incorrect, 2) Fcuk RF, that so 1990&rsquo;s, I am talking about mesh protocols that are vastly superior to its RF counter part (the benefits are so great it deserves its own post).</p>
+<p>Another Tangent, enter Internet of Things (iot), billions of small devices with sensors that are going to take over our lives. Most of these sensors are simple in implementation and are battery powered which gives them the mobility to be anywhere and everywhere. Here comes the fun part, all these battery powered devices are not going to come loaded with the latest and greatest in client-server technology. Imagine a scenario where someone loads an RC car with a cinder block and expects it to run circles around their dog, not gonna happen. As such these devices have microcontrollers that are just powerful enough to do their tasks and at the same time enabling the device to operate for as long as possible in remote locations on battery.</p>
 
-<p>Circling back, again, to the story, if we continued down the HTTP path our device would literally be maxing out their resource doing string manipulation and building http requests and parsing JSON responses. Imagine that, we are in the middle of a hardware revolution, and we cant even use strings&hellip; Scout also has the ability to operate over GSM and the more data that is sent over the wire the more the costs dig into our margins. So the incentives aligned to find a lower level protocol to communicate over.</p>
+<p>Circling back, again, to the story, if we continued down the HTTP path our device would literally be maxing out their resources doing string manipulation, building http requests and parsing JSON responses. Imagine that, we are in the middle of a hardware revolution, and we cant even use strings&hellip; Scout also has the ability to operate over GSM so the more data that we send over the wire the more we dig into our margins. So the incentives aligned to find a lower level protocol to communicate over.</p>
 
-<p>The solution, TCP/IP + binary. Lets let that soak in a little. I haven’t touched binary in years and if there was ever a case where I needed to read a file through a stream, the binary piece is so abstracted that it&rsquo;s a black box for most young developers.</p>
+<p>The solution, TCP/IP + binary. Lets let that soak in a little. I haven’t touched binary in years and if there was ever a case where I needed to read a file through a stream, the binary piece is so abstracted that it&rsquo;s a black box for most developers.</p>
 
-<p>The hunt for a binary server began. Most production tested frameworks that I like/ have worked with don’t have great solution for handling TCP/IP. Sure ruby has a built in TCPSocketServer, but I don’t want to have to write a server framework from scratch&hellip;</p>
+<p>The hunt for a binary server began. Most production tested frameworks that I like/ have worked with (sinatra, padrino, rails) don’t have great solution for handling TCP/IP. Sure ruby has a built in TCPSocketServer, but I don’t want to have to write a server framework from scratch&hellip;</p>
 
 <p><code>ruby
 s = TCPSocket.new 'localhost', 2000
@@ -43,48 +43,52 @@ while line = s.gets
 end
 </code></p>
 
-<p>After about three days of searching for a suitable ruby framework I decided to look at nodejs. I have never used it, but in my past life i dealt extensively in javascript client frameworks (backbone, angular, extjs, and dojo). Turns out, there is a great project called actionHero (<a href="https://github.com/evantahler/actionHero">https://github.com/evantahler/actionHero</a>). evantahler created an awesome solution that included the ability to define servers within a framework. And it just so happened that it included a json socket server out of the box&hellip; jackpot! (Finding this was a needle in a haystack situation). What was left was converting json input / output into binary opt codes + parameters. So I cloned the json scoket server, and redefined the parseRequest function and implemented a binaryActionRequestParser. The binaryActionRequestParser creates an object that acts in the same way the json socket server expects its data. This way i was able to throw the object at the server.processAction() and let it take care of the rest.</p>
+<p>After about three days of searching for a suitable ruby framework I decided to look at nodejs. I have never used it, but in my past life I dealt extensively in javascript client frameworks (backbone, angular, extjs, and dojo). Turns out, there is a great project called actionHero (<a href="https://github.com/evantahler/actionHero">https://github.com/evantahler/actionHero</a>). evantahler created an awesome solution that gives a developer the ability to define server types within a framework. And it just so happened that it included a json socket server out of the box&hellip; jackpot! (Finding this was a needle in a haystack situation). What was left was converting json input / output into binary opt codes + parameters. So I cloned the json scoket server, and redefined the parseRequest function (see below) and implemented a binaryActionRequestParser. The binaryActionRequestParser creates an object that acts in the same way the json socket server expects its data. This way I was able to throw the object at the server.processAction() and let it take care of the rest.</p>
+
+<p>```ruby
+api.utils.binaryActionRequestParse = function(){
+  function Parser() {</p>
+
+<pre><code>dissolve.call(this);
+this.loop(function(end) {
+  this.mcaction16("action").tap(function() {
+    switch (this.vars.action) {
+      case 'signin': this.uint32be('uuid'); break;
+      case 'status': break;
+      case 'updateFwVersion': break;
+      ...
+
+    }
+  }).tap(function() {
+    this.push(this.vars);
+    this.vars = {};
+  });
+});
+</code></pre>
+
+<p>  }</p>
+
+<p>  util.inherits(Parser, dissolve);</p>
+
+<p>  &hellip;</p>
+
+<p>  return new Parser();
+}
+```</p>
 
 <p>```ruby
 var parseRequest = function(connection){
-  server.log(&ldquo;parsing request&rdquo;, &lsquo;debug&rsquo;);
   parser = new api.utils.binaryActionRequestParse();
   parser.on(&ldquo;readable&rdquo;, function() {</p>
 
 <pre><code>var e;
 while (e = parser.read()) {
-  server.log("action: "+JSON.stringify(e), 'debug');
-  server.log("checking action against built in verbs", 'debug');
-  connection.verbs(e.action, [], function(error, data){
-    if(error == null){
-      server.log("Found in built in verbs, data: "+JSON.stringify(data), 'debug');
-      var message = {status: "OK", context: "response", data: data}
-      server.sendMessage(connection, message);
+  connection.params["action"] = e.action;
+  connection.params = e;
+  connection.error = null;
+  connection.response = {};
 
-    }else if(error === "verb not found or not allowed"){
-      server.log("Not found in built in verbs", 'debug');
-      try{ // check for and attempt to check single-use params
-        server.log("trying custom request action: " + e.action, "debug");
-
-        if(e.action != null){
-          connection.params["action"] = e.action;
-        }
-
-        connection.params = e;
-
-      }catch(e){
-        connection.params.action = e.action;
-      }
-
-      connection.error = null;
-      connection.response = {};
-
-      server.processAction(connection);
-
-    }else{
-      server.sendMessage(connection, api.utils.binaryActionResponseSerialiser().unknown_call());
-    }
-  });
+  server.processAction(connection);
 }
 </code></pre>
 
@@ -94,7 +98,7 @@ while (e = parser.read()) {
 }
 ```</p>
 
-<p>ActionHero has proven to be an awesome tool for getting a binary server up and running, and it has been performing brilliantly. For parsing and producing binary data in node I used this repo (<a href="https://github.com/deoxxa/dissolve">https://github.com/deoxxa/dissolve</a>) and this repo (<a href="https://github.com/deoxxa/concentrate">https://github.com/deoxxa/concentrate</a>). Deoxxa, has great solution for working with binary data. It also gives you the ability to define your own patterns for consuming data if the built in functions aren&rsquo;t enough</p>
+<p>ActionHero has proven to be an awesome tool for getting a binary server up and running, and it has been performing brilliantly. For parsing and producing binary data in node I used this repo (<a href="https://github.com/deoxxa/dissolve">https://github.com/deoxxa/dissolve</a>) and this repo (<a href="https://github.com/deoxxa/concentrate">https://github.com/deoxxa/concentrate</a>). Deoxxa, has a great solution for working with binary data. It also gives you the ability to define your own patterns for consuming data if the built in functions aren&rsquo;t enough</p>
 
 <p>Chaining calls:
 <code>javascript
@@ -103,7 +107,28 @@ this.uint32be("uuid").uint16("opt_code").uint8bool("on_battery_power")
 
 <p>Custom types:
 ```javascript
-var uint8bool = function uint8bool(name) {
+var mcstring16 = function string16(name) {
+  var len = [name, &ldquo;len&rdquo;].join(&ldquo;_&rdquo;);</p>
+
+<p>  return this.uint16be(len).tap(function() {</p>
+
+<pre><code>this.buffer(name, this.vars[len] * 2).tap(function() {
+  delete this.vars[len];
+
+  for (var i=0;i&lt;this.vars[name].length/2;++i) {
+    var t = this.vars[name][i*2];
+    this.vars[name][i*2] = this.vars[name][i*2+1];
+    this.vars[name][i*2+1] = t;
+  }
+
+  this.vars[name] = this.vars[name].toString("ucs2");
+});
+</code></pre>
+
+<p>  });
+};</p>
+
+<p>var uint8bool = function uint8bool(name) {
   return this.uint8be(name).tap(function() {</p>
 
 <pre><code>this.vars[name] = (this.vars[name] == 1 ? true : false)
@@ -113,9 +138,9 @@ var uint8bool = function uint8bool(name) {
 };
 ```</p>
 
-<p>Its incredible to think that with hardware taking such a big step forward in accessibility and implementation we (as developers) are forced to take steps back in communication protocols. I was a victim of trying to impose web standards in a field that is so vastly different. There is not this 1:1 correlation that I assumed/ wished there was. It&rsquo;s too early to tell, but I think the difference is for the best. We had to go back to basics and define a solution that works for the problem. It&rsquo;s like the saying goes; don&rsquo;t use an anvil when a hammer will do.</p>
+<p>Its incredible to think that with hardware taking such a big step forward in accessibility and implementation we (as developers) are forced to take steps back in communication protocols. I was a victim of trying to impose web standards in a field that is so vastly different. There is not this 1:1 correlation that I assumed/ wished there was. We had to go back to basics and build a solution that worked best for the problem. It&rsquo;s too early to tell, but I think the difference solution is for the best. It&rsquo;s like the saying goes; don&rsquo;t use an anvil when a hammer will do.</p>
 
-<p>It is an exciting time and it will be interesting to see if more frameworks will be developed on languages such as ruby, node, python that will help usher in the new hardware revolution.</p>
+<p>It is an exciting time and it will be very interesting to see what new frameworks will be developed on languages such as ruby, node, python that will help usher in the new hardware era.</p>
 ]]></content>
   </entry>
   
