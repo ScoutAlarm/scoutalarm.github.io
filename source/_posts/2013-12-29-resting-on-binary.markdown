@@ -1,0 +1,122 @@
+---
+layout: post
+title: "REST'ing on Binary"
+date: 2013-12-29 14:41:51 -0600
+comments: true
+author: Dave Shapiro
+categories: [Ruby Nodejs Socket IoT]
+---
+
+@ Scout we live at the intersection of web and hardware technologies. At first you may make the same mistake I did and assume that the hardware revolution can/ will just assimilate itself to standards established in the web 2.0 era. WRONG.
+
+Disclaimer, This is my first encounter with hardware devices that communicate with the internet (IoT, internet of things).
+
+A short background story, currently we are developing the internal infrastructure for Scout, a few weeks ago I began writing a web-service that would be a gateway for our hardware devices to communicate with our ecosystem. Naively I created a RESTful api using my favorite web-service DSL (https://github.com/mattetti/Weasel-Diesel). I defined some resources and got as far as establishing all the important information we needed to capture.
+
+Tangent, data transfer is not a big consideration when developing for the web. For mobile, developers get a little bit more conscious but as long as you are sending only the data you need and using JSON, further optimization isn’t worth the effort (imho). The reason behind this is that technology has advancement so much, servers have gotten so powerful and cheap that protocol overhead and payload management isn't relevant like it used to be when the internet infrastructure was in its infancy.
+
+Back to the story, With the following knowledge there was almost no reason for me to think about data transfer and how resources intensive protocols like HTTP are. Why would I, I have never seen a webserver or client choke when trying to process an http request/ response.
+
+Another Tangent, enter Internet of Things (iot), billions of small devices with sensors that are going to take over our lives. Most of these sensors are simple in implementation and are battery powered which gives them the mobility to be anywhere and everywhere. Here comes the fun part, all these battery powered devices are not going to come loaded with the latest and greatest in client-server technology. Imagine a scenario where someone loads an RC car with a cinder block and expects it to run circles around their dog, not gonna happen. As such these devices have microcontrollers that are just powerful enough to do their tasks and at the same time enabling the device to operate for as long as possible in remote locations on battery.
+
+Circling back, again, to the story, if we continued down the HTTP path our device would literally be maxing out their resources doing string manipulation, building http requests and parsing JSON responses. Imagine that, we are in the middle of a hardware revolution, and we cant even use strings... Scout also has the ability to operate over GSM so the more data that we send over the wire the more we dig into our margins. So the incentives aligned to find a lower level protocol to communicate over.
+
+The solution, TCP/IP + binary. Lets let that soak in a little. I haven’t touched binary in years and if there was ever a case where I needed to read a file through a stream, the binary piece is so abstracted that it's a black box for most developers.
+
+The hunt for a binary server began. Most production tested frameworks that I like/ have worked with (sinatra, padrino, rails) don’t have great solution for handling TCP/IP. Sure ruby has a built in TCPSocketServer, but I don’t want to have to write a server framework from scratch...
+
+```ruby
+s = TCPSocket.new 'localhost', 2000
+while line = s.gets
+  puts line
+end
+```
+
+After about three days of searching for a suitable ruby framework I decided to look at nodejs. I have never used it, but in my past life I dealt extensively in javascript client frameworks (backbone, angular, extjs, and dojo). Turns out, there is a great project called actionHero (https://github.com/evantahler/actionHero). evantahler created an awesome solution that gives a developer the ability to define server types within a framework. And it just so happened that it included a json socket server out of the box... jackpot! (Finding this was a needle in a haystack situation). What was left was converting json input / output into binary opt codes + parameters. So I cloned the json scoket server, and redefined the parseRequest function (see below) and implemented a binaryActionRequestParser. The binaryActionRequestParser creates an object that acts in the same way the json socket server expects its data. This way I was able to throw the object at the server.processAction() and let it take care of the rest.
+
+
+```ruby
+api.utils.binaryActionRequestParse = function(){
+  function Parser() {
+    dissolve.call(this);
+    this.loop(function(end) {
+      this.mcaction16("action").tap(function() {
+        switch (this.vars.action) {
+          case 'signin': this.uint32be('uuid'); break;
+          case 'status': break;
+          case 'updateFwVersion': break;
+          ...
+
+        }
+      }).tap(function() {
+        this.push(this.vars);
+        this.vars = {};
+      });
+    });
+  }
+
+  util.inherits(Parser, dissolve);
+
+  ...
+
+  return new Parser();
+}
+```
+
+```ruby
+var parseRequest = function(connection){
+  parser = new api.utils.binaryActionRequestParse();
+  parser.on("readable", function() {
+    var e;
+    while (e = parser.read()) {
+      connection.params["action"] = e.action;
+      connection.params = e;
+      connection.error = null;
+      connection.response = {};
+
+      server.processAction(connection);
+    }
+  });
+
+  parser.write(connection.rawConnection.socketDataString);
+}
+```
+
+ActionHero has proven to be an awesome tool for getting a binary server up and running, and it has been performing brilliantly. For parsing and producing binary data in node I used this repo (https://github.com/deoxxa/dissolve) and this repo (https://github.com/deoxxa/concentrate). Deoxxa, has a great solution for working with binary data. It also gives you the ability to define your own patterns for consuming data if the built in functions aren't enough
+
+Chaining calls:
+```javascript
+this.uint32be("uuid").uint16("opt_code").uint8bool("on_battery_power")
+```
+
+Custom types:
+```javascript
+var mcstring16 = function string16(name) {
+  var len = [name, "len"].join("_");
+
+  return this.uint16be(len).tap(function() {
+    this.buffer(name, this.vars[len] * 2).tap(function() {
+      delete this.vars[len];
+
+      for (var i=0;i<this.vars[name].length/2;++i) {
+        var t = this.vars[name][i*2];
+        this.vars[name][i*2] = this.vars[name][i*2+1];
+        this.vars[name][i*2+1] = t;
+      }
+
+      this.vars[name] = this.vars[name].toString("ucs2");
+    });
+  });
+};
+
+var uint8bool = function uint8bool(name) {
+  return this.uint8be(name).tap(function() {
+    this.vars[name] = (this.vars[name] == 1 ? true : false)
+  });
+};
+```
+
+
+Its incredible to think that with hardware taking such a big step forward in accessibility and implementation we (as developers) are forced to take steps back in communication protocols. I was a victim of trying to impose web standards in a field that is so vastly different. There is not this 1:1 correlation that I assumed/ wished there was. We had to go back to basics and build a solution that worked best for the problem. It's too early to tell, but I think the difference solution is for the best. It's like the saying goes; don't use an anvil when a hammer will do.
+
+It is an exciting time and it will be very interesting to see what new frameworks will be developed on languages such as ruby, node, python that will help usher in the new hardware era.
